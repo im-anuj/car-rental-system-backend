@@ -5,7 +5,9 @@ const router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) =>{
   res.json({
-    message: "Checking"
+    message: "Checking",
+    id: req.user.userId,
+    username: req.user.username
   });
 });
 

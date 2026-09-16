@@ -30,8 +30,8 @@ router.post('/login', async (req, res) => {
   const password = req.body.password;
 
   const response = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username, password]);
-  const userExists = response.rows[0];
-  if(!userExists){
+  const user = response.rows[0];
+  if(!user){
     return res.status(403).json({
       message: "Invalid credentials"
     });
@@ -41,7 +41,8 @@ router.post('/login', async (req, res) => {
     throw new Error("JWT_SECRET is not defined");
   }
   const token = jwt.sign({
-    id: userExists.id
+    userId: user.id,
+    username: user.username
   }, JWT_SECRET);
 
   res.json({
