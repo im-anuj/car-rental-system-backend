@@ -20,7 +20,7 @@ router.post('/signup', async (req, res) => {
     });
   }
 
-  const response = await pool.query("INSERT INTO users (username, password) VALUEs ($1, $2) RETURNING id",
+  const response = await pool.query("INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id",
     [username, password]);
   
   res.json({
