@@ -1,9 +1,13 @@
 import express from "express";
 import pool from "../config/database";
 import jwt from "jsonwebtoken";
+import { signupSchema } from "../schemas/userSchema";
+import { validate } from "../middleware/validator";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
+
+router.use(validate(signupSchema));
 
 router.post('/signup', async (req, res) => {
   const username = req.body.username;
@@ -11,7 +15,7 @@ router.post('/signup', async (req, res) => {
 
   const existingUser = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
   if(existingUser.rows.length > 0){
-    return res.json({
+    return res.status(400).json({
       message: "User already exists"
     });
   }
