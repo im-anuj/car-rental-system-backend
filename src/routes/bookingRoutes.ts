@@ -35,11 +35,57 @@ router.post('/', async (req: Request<{}, {}, bookingInput>, res) => {
 
 });
 
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
+
+  const { userId, username } = req.user;
+  const { bookingId, summary } = req.query;
+
+  if (summary === 'true') {
+
+    const result = await pool.query(`SELECT COUNT(*) AS "totalBookings",
+      COALESCE(SUM(days * rent_per_day), 0) AS "totalAmountSpent"
+      FROM bookings
+      WHERE user_id=$1
+      AND status IN ('booked', 'completed')
+    `, [userId]);
+
+    return res.json({
+      data: {
+        userId,
+        username,
+        totalBookings: result.rows[0].totalBookings,
+        totalAmountSpent: result.rows[0].totalAmountSpent
+      }
+    });
+
+  }
+
+  if (bookingId) {
+
+    const result = await pool.query(`SELECT 
+      id, car_name, days, rent_per_day, status, days*rent_per_day AS "totalCost" 
+      FROM bookings WHERE id=$1 AND user_id=$2 AND status IN ('booked', 'completed')
+    `, [bookingId, userId]);
+
+    const booking = result.rows[0];
+
+    if(!booking){
+      return res.status(404).json({
+        error: "Booking not found"
+      });
+    }
+    return res.json({
+      data: booking
+    });
+  }
+
+  const result = await pool.query(`SELECT 
+    id, car_name, days, rent_per_day, status, days*rent_per_day AS "totalCost" 
+    FROM bookings WHERE user_id=$1 AND status IN ('booked', 'completed')
+  `, [userId]);
+
   res.json({
-    message: "Checking",
-    id: req.user.userId,
-    username: req.user.username
+    data: result.rows
   });
 });
 
