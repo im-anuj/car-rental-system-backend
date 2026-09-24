@@ -8,4 +8,9 @@ export const bookingSchema = z.object({
   rentPerDay: z.number().int().positive().lte(2000, "invalid inputs"),
 });
 
+export const updateBookingSchema = z.object({
+  status: z.enum(["completed", "cancelled"])
+});
+
+
 export type bookingInput = z.infer<typeof bookingSchema>;
