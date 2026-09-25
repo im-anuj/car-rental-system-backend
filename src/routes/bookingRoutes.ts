@@ -124,6 +124,30 @@ router.put('/:bookingId', validate(updateBookingSchema), async (req, res) => {
   })
 });
 
+router.delete('/:bookingId', async (req, res) => {
+  const {bookingId} = req.params;
+  const {userId} = req.user;
 
+  const bookingExist = await pool.query(`SELECT * FROM bookings WHERE id=$1`, [bookingId]);
+  const booking = bookingExist.rows[0];
+  
+  if(!booking){
+    return res.status(404).json({
+      error: "Booking not found"
+    });
+  }
+
+  if(booking.user_id !== userId){
+    return res.status(403).json({
+      error: "Booking doesnt belong to user"
+    });
+  }
+
+  await pool.query(`DELETE FROM bookings WHERE id=$1 AND user_id=$2`,[bookingId, userId]);
+
+  res.json({
+    message: "Booking deleted successfully"
+  });
+});
 
 export default router;
