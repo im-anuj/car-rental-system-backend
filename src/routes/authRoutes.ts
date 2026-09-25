@@ -1,4 +1,5 @@
 import express from "express";
+import bcrypt from "bcrypt";
 import pool from "../config/database";
 import jwt from "jsonwebtoken";
 import { signupSchema } from "../schemas/userSchema";
@@ -12,6 +13,7 @@ router.use(validate(signupSchema));
 router.post('/signup', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const existingUser = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
   if(existingUser.rows.length > 0){
@@ -21,7 +23,7 @@ router.post('/signup', async (req, res) => {
   }
 
   const response = await pool.query("INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id",
-    [username, password]);
+    [username, hashedPassword]);
   
   res.json({
     id: response.rows[0].id,
@@ -33,11 +35,19 @@ router.post('/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  const response = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username, password]);
+  const response = await pool.query("SELECT * FROM users WHERE username = $1 ", [username]);
   const user = response.rows[0];
   if(!user){
     return res.status(403).json({
       message: "Invalid credentials"
+    });
+  }
+
+  const isPassswordCorrect = await bcrypt.compare(password, user.password);
+
+  if(!isPassswordCorrect){
+    return res.status(401).json({
+      error: "Invalid credentials"
     });
   }
 
